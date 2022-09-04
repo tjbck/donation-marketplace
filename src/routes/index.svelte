@@ -1,38 +1,37 @@
 <script context="module">
-	import { server } from '$lib/variables';
-
 	/** @type {import('@sveltejs/kit').Load} */
-	export async function load({ fetch }) {
-		const res = await fetch(`${server}/listings/new`, {
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json'
-			}
-		})
-			.then(async (res) => {
-				if (!res.ok) throw await res.json();
-				return await res.json();
-			})
-			.catch((err) => {
-				console.log('ERROR', err);
-				return null;
-			});
+	export async function load({}) {
+		const items = await getNewListings();
 
 		return {
 			// use it as a prop of the route's component
-			props: { items: res.items }
+			props: { items: items }
 		};
 	}
 </script>
 
 <script>
-	import Top from '$lib/components/landing/Top.svelte';
+	import toast from 'svelte-french-toast';
+	import { page } from '$app/stores';
+
+	import { getNewListings } from '$lib/apis/listings';
+	import TopHero from '$lib/components/landing/TopHero.svelte';
 	import Listings from '$lib/components/listings/Listings.svelte';
+	import { onMount } from 'svelte';
+
 	export let items = [];
+
+	onMount(() => {
+		const error = $page.url.searchParams.get('error');
+		if (error) {
+			toast.error(error);
+		}
+	});
 </script>
 
-<Top />
+<TopHero />
 <Listings title="New Listings" {items}>
-	<div class="text-sm mt-auto" slot="subtitle"><a href="/listings">See more</a></div>
+	<div class="text-sm font-semibold mt-auto" slot="subtitle">
+		<a href="/listings">See more</a>
+	</div>
 </Listings>

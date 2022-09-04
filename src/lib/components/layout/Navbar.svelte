@@ -1,30 +1,29 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { session } from '$app/stores';
 
 	import Menu from '../common/Menu.svelte';
-
 	import Login from '../landing/Login.svelte';
 	import Signup from '../landing/Signup.svelte';
 
 	import Searchbar from './Navbar/Searchbar.svelte';
+	import CreateNew from '../listings/CreateNew.svelte';
 
 	let showLoginModal = false;
 	let showSignupModal = false;
 
 	let showCreateNewListingModal = false;
 
-	import { user } from '$lib/stores';
-	import CreateNew from '../listings/CreateNew.svelte';
-	let userValue;
-	user.subscribe((value) => {
-		console.log('userValue', value);
-		userValue = value;
-	});
-
 	const signOutHandler = () => {
-		goto('/');
-		localStorage.removeItem('token');
-		user.update(() => null);
+		fetch(`/api/logout`, {
+			method: 'GET'
+		})
+			.then((res) => res.json())
+			.then((json) => {
+				if (json.status) {
+					window.location.href = '/';
+				}
+			});
 	};
 </script>
 
@@ -40,9 +39,7 @@
 		<div class="hidden sm:flex flex-row items-center  md:items-start">
 			<div class="basis-full text-center my-auto">
 				<a href="/">
-					<span class="text-bold text-xl font-medium text-gray-600 hover:text-gray-800"
-						>Marketplace</span
-					>
+					<span class="font-bold text-xl text-gray-600 hover:text-gray-800">Marketplace</span>
 				</a>
 			</div>
 		</div>
@@ -52,7 +49,7 @@
 				<Searchbar />
 			</div>
 
-			{#if !$user}
+			{#if !$session.user}
 				<Login bind:show={showLoginModal} />
 				<Signup bind:show={showSignupModal} />
 				<div class="ml-2">
@@ -95,11 +92,35 @@
 				</div>
 				<div class="ml-2">
 					<Menu
-						title={`${userValue.name}`}
+						title={`${$session.user.name}`}
 						options={[
 							[
 								{
-									title: 'My Account',
+									title: 'Show Listings',
+									callback: () => {
+										console.log('listings');
+										goto('/listings');
+									}
+								},
+								{
+									title: 'Messages',
+									callback: () => {
+										console.log('chats');
+										goto('/chats');
+									}
+								}
+							],
+							[
+								{
+									title: 'My Profile',
+									callback: () => {
+										console.log('profile');
+										location.href = `/users/${$session.user.id}`;
+									}
+								},
+
+								{
+									title: 'Settings',
 									callback: () => {
 										console.log('account');
 										goto('/account');

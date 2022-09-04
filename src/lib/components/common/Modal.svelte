@@ -18,7 +18,7 @@
 <Transition appear {show}>
 	<Dialog
 		as="div"
-		class="fixed inset-0 z-10 overflow-y-auto"
+		class="fixed inset-0 z-50 overflow-y-auto"
 		on:close={() => {
 			if (options.closeOnBackdropOrEsc) {
 				show = false;

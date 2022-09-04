@@ -2,9 +2,10 @@
 	import Modal from '../common/Modal.svelte';
 	import Overlay from '../common/Overlay.svelte';
 
+	import toast from 'svelte-french-toast';
+
 	import { goto } from '$app/navigation';
-	import { user } from '$lib/stores';
-	import { server } from '$lib/variables';
+	import { server } from '$lib/constants';
 	import { GetRecaptchaToken } from '$lib/utils';
 
 	export let show = true;
@@ -39,7 +40,7 @@
 				recaptcha_token: token
 			};
 
-			fetch(`${server}/signup`, {
+			fetch(`/api/signup`, {
 				method: 'POST',
 				headers: {
 					Accept: 'application/json',
@@ -52,19 +53,13 @@
 					return res.json();
 				})
 				.then((json) => {
-					localStorage.setItem('token', 'Bearer ' + json['token']);
-
-					user.update(() => ({
-						email: json.email,
-						name: json.name
-					}));
-
 					show = false;
+					window.location.href = '/listings';
 				})
 				.catch((error) => {
 					console.log(error);
 
-					alert(error.detail);
+					toast.error(error.detail);
 
 					loading = false;
 					email = '';

@@ -1,9 +1,9 @@
 <script>
-	import { goto } from '$app/navigation';
-
-	import { user } from '$lib/stores';
-	import { server } from '$lib/variables';
+	import { session } from '$app/stores';
+	import { server } from '$lib/constants';
 	import { GetRecaptchaToken } from '$lib/utils';
+
+	import { goto } from '$app/navigation';
 	import { onMount, tick } from 'svelte';
 
 	import Modal from '../common/Modal.svelte';
@@ -22,7 +22,6 @@
 		e.preventDefault();
 		loading = true;
 
-		const token = localStorage.token;
 		const recaptcha_token = await GetRecaptchaToken();
 
 		let payload = new FormData();
@@ -32,10 +31,10 @@
 		payload.append('content', content);
 		payload.append('file', files[0]);
 
-		fetch(`${server}/listings/`, {
+		fetch(`${server}/listings/add`, {
 			method: 'POST',
 			headers: {
-				authorization: token
+				authorization: `Bearer ${$session.user.token}`
 			},
 			credentials: 'include',
 			body: payload
@@ -106,9 +105,8 @@
 					/>
 				</div>
 
-				<div class="flex justify-center">
-					<div class="basis-9/12 my-auto font-medium text-sm text-gray-500" />
-					<div class="basis-3/12">
+				<div class="flex  justify-end">
+					<div>
 						<button
 							type="submit"
 							class="mt-2 text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-2 focus:outline-none focus:ring-yellow-300 font-medium rounded-lg text-sm w-full px-5 py-2.5 text-center dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus:ring-yellow-800"

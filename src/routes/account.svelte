@@ -1,40 +1,71 @@
+<script context="module">
+	/** @type {import('@sveltejs/kit').Load} */
+	export async function load({ url, fetch, session }) {
+		console.log('workspace', session);
+
+		if (session.user) {
+			const res = await fetch(`${server}/users/me`, {
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					authorization: `Bearer ${session.user.token}`
+				}
+			})
+				.then(async (res) => {
+					if (!res.ok) throw await res.json();
+					return res.json();
+				})
+				.then((json) => {
+					return json;
+				})
+				.catch((err) => {
+					console.log('ERROR', err);
+					return null;
+				});
+
+			console.log(res);
+			return {
+				// use it as a prop of the route's component
+				props: { userInfoData: res }
+			};
+		} else {
+			return {
+				status: 302,
+				redirect: '/?error=User session could not be found, Please sign in and try again.'
+			};
+		}
+	}
+</script>
+
 <script>
 	import Spinner from '$lib/components/common/Spinner.svelte';
 
-	import { user } from '$lib/stores';
-	import { server } from '$lib/variables';
+	import { server } from '$lib/constants';
 	import { onMount } from 'svelte';
+	import { session } from '$app/stores';
 
-	import dayjs from 'dayjs';
 	import Overlay from '$lib/components/common/Overlay.svelte';
+	import toast from 'svelte-french-toast';
 
-	let userValue;
-	user.subscribe((value) => {
-		console.log('userValue', value);
-		userValue = value;
-	});
+	export let userInfoData;
 
 	let locationButtonLoading = false;
 
-	let userInfoData;
-
-	let nameValue = '';
-	let mobileValue = '';
-
-	let addressValue = '';
+	let nameValue = userInfoData.name;
+	let mobileValue = userInfoData.mobile;
+	let addressValue = userInfoData.address;
 	let coordsValue = [];
 
 	const updateUserInfo = async (_userInfo) => {
 		console.log('updateUserInfo', _userInfo);
-		const token = localStorage.token;
-
-		if (token) {
+		if ($session.user) {
 			const res = await fetch(`${server}/users/update`, {
 				method: 'POST',
 				headers: {
 					Accept: 'application/json',
 					'Content-Type': 'application/json',
-					authorization: token
+					authorization: `Bearer ${$session.user.token}`
 				},
 				body: JSON.stringify(_userInfo)
 			})
@@ -52,45 +83,6 @@
 				});
 
 			console.log(res);
-		}
-	};
-
-	const getUserInfo = async () => {
-		const token = localStorage.token;
-
-		if (token) {
-			const res = await fetch(`${server}/users/me`, {
-				method: 'GET',
-				headers: {
-					Accept: 'application/json',
-					'Content-Type': 'application/json',
-					authorization: token
-				}
-			})
-				.then((res) => res.json())
-				.then((json) => {
-					if (json.error) {
-						console.log(json.error);
-						throw new Error(json.error);
-					} else {
-						return json;
-					}
-				})
-				.catch((err) => {
-					console.log('ERROR', err);
-					localStorage.removeItem('token');
-					location.reload();
-				});
-
-			console.log(res);
-
-			userInfoData = res;
-
-			nameValue = userInfoData.name;
-			mobileValue = userInfoData.mobile;
-
-			// deep copy required for arrays
-			addressValue = userInfoData.address;
 		}
 	};
 
@@ -122,14 +114,10 @@
 				locationButtonLoading = false;
 			});
 		} else {
-			alert('We could not determine your location, Please try again with your phone!');
+			toast.error('We could not determine your location, Please try again with your phone!');
 			return null;
 		}
 	};
-
-	onMount(async () => {
-		getUserInfo();
-	});
 </script>
 
 <svelte:head>
@@ -141,8 +129,10 @@
 <div class="flex flex-row justify-center min-h-screen ">
 	<!-- <div class="hidden md:flex md:basis-1/12 ">01</div> -->
 
-	<div class="basis-11/12 md:basis-6/12 max-w-7xl text-center text-gray-700 pt-8 pb-24">
-		{#if $user && userInfoData}
+	<div
+		class="basis-11/12 md:basis-8/12 lg:basis-6/12 max-w-7xl text-center text-gray-700 pt-8 pb-24"
+	>
+		{#if $session.user && userInfoData}
 			<div class="mb-24">
 				<div class="text-left text-3xl font-bold mb-12">User Info</div>
 
@@ -164,7 +154,7 @@
 								>
 
 								<div class="flex flex-col md:flex-row">
-									<div class="basis-full my-1 md:basis-10/12 md:pr-1">
+									<div class="basis-full my-1 md:basis-9/12 md:pr-1">
 										<input
 											type="text"
 											id="address1"
@@ -176,7 +166,7 @@
 											required
 										/>
 									</div>
-									<div class="basis-full my-1 md:basis-2/12 md:pl-1 md:self-end">
+									<div class="basis-full my-1 md:basis-3/12 md:pl-1 md:self-end">
 										<Overlay show={locationButtonLoading} size="sm">
 											<button
 												type="submit"
@@ -205,18 +195,18 @@
 							<label for="email" class="block mb-2 text-sm font-medium text-gray-900 ">Email</label>
 
 							<div class="flex flex-col md:flex-row">
-								<div class="basis-full my-1 md:basis-10/12 md:pr-1">
+								<div class="basis-full my-1 md:basis-9/12 md:pr-1">
 									<input
 										type="email"
 										id="email"
-										value={$user.email}
+										value={$session.user.email}
 										class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 disabled:text-gray-500 disabled:bg-gray-200 block w-full p-2.5 "
 										placeholder="Your email address *"
 										disabled
 										autocomplete="email"
 									/>
 								</div>
-								<div class="basis-full my-1 md:basis-2/12 md:pl-1 md:self-end" />
+								<div class="basis-full my-1 md:basis-3/12 md:pl-1 md:self-end" />
 							</div>
 						</div>
 						<div class="mb-3">
@@ -231,7 +221,7 @@
 								>
 
 								<div class="flex flex-col md:flex-row">
-									<div class="basis-full my-1 md:basis-10/12 md:pr-1">
+									<div class="basis-full my-1 md:basis-9/12 md:pr-1">
 										<input
 											type="text"
 											id="name"
@@ -241,11 +231,11 @@
 											required
 										/>
 									</div>
-									<div class="basis-full my-1 md:basis-2/12 md:pl-1 md:self-end">
+									<div class="basis-full my-1 md:basis-3/12 md:pl-1 md:self-end">
 										<button
 											type="submit"
 											class=" w-full justify-center px-3 py-2.5 text-sm text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-											disabled={nameValue === $user.name}
+											disabled={nameValue === $session.user.name}
 										>
 											Save
 										</button>
@@ -276,7 +266,7 @@
 								>
 
 								<div class="flex flex-col md:flex-row">
-									<div class="basis-full my-1 md:basis-10/12 md:pr-1">
+									<div class="basis-full my-1 md:basis-9/12 md:pr-1">
 										<input
 											type="tel"
 											id="number"
@@ -288,7 +278,7 @@
 											autocomplete="mobile"
 										/>
 									</div>
-									<div class="basis-full my-1 md:basis-2/12 md:pl-1 md:self-end">
+									<div class="basis-full my-1 md:basis-3/12 md:pl-1 md:self-end">
 										<button
 											type="submit"
 											class=" w-full justify-center px-3 py-2.5 text-sm text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"

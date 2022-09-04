@@ -1,8 +1,9 @@
 <script>
+	import toast from 'svelte-french-toast';
+
 	import { goto } from '$app/navigation';
 
-	import { user } from '$lib/stores';
-	import { server } from '$lib/variables';
+	import { server } from '$lib/constants';
 	import { GetRecaptchaToken } from '$lib/utils';
 	import { onMount, tick } from 'svelte';
 
@@ -11,8 +12,8 @@
 
 	export let show = true;
 
-	let email;
-	let password;
+	let email = '';
+	let password = '';
 	let loading = false;
 
 	const submitForm = async (e) => {
@@ -27,7 +28,7 @@
 			recaptcha_token: token
 		};
 
-		fetch(`${server}/login`, {
+		fetch(`/api/login`, {
 			method: 'POST',
 			headers: {
 				Accept: 'application/json',
@@ -41,20 +42,11 @@
 				return res.json();
 			})
 			.then((json) => {
-				if (json.error) {
-					throw new Error(json.error);
-				} else {
-					localStorage.setItem('token', 'Bearer ' + json['token']);
-					user.update(() => ({
-						email: json.email,
-						name: json.name
-					}));
-					goto('/listings');
-					show = false;
-				}
+				show = false;
+				window.location.href = '/listings';
 			})
 			.catch((error) => {
-				alert(error.detail);
+				toast.error(error.detail);
 				loading = false;
 				email = '';
 				password = '';

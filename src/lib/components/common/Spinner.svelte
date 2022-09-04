@@ -23,26 +23,3 @@
 		/>
 	</svg>
 </div>
-
-<!-- <style>
-	.pLoader--color-blue {
-		stroke: #3182f6;
-		stroke: var(--blue500);
-	}
-
-	.pLoader--size-large {
-		width: 40px;
-		height: 40px;
-	}
-	.pLoader {
-		-webkit-animation: pLoader-rotation 1.8s linear infinite forwards;
-		animation: pLoader-rotation 1.8s linear infinite forwards;
-	}
-	.pLoader__circle {
-		stroke-dasharray: 180;
-		stroke-dashoffset: 0;
-		transform-origin: center;
-		-webkit-animation: pLoader-turn 1.8s ease-in-out infinite forwards;
-		animation: pLoader-turn 1.8s ease-in-out infinite forwards;
-	}
-</style> -->
